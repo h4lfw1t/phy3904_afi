@@ -1,0 +1,137 @@
+% PHY 3904 AFI Report
+% Author: Patrick Geraghty
+% Affiliation: University of Ottawa
+% Date: March 15, 2026
+
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{float}
+\usepackage[font=footnotesize,labelfont=bf,it]{caption}
+\usepackage{makecell}
+\usepackage{multicol}
+\usepackage{siunitx}
+\usepackage{mhchem}
+\usepackage{changepage} % For custom margins
+\usepackage{titlesec} % For custom section formatting
+\usepackage{flushend} % For balanced two-column bibliography
+%\usepackage[super,sort&compress]{natbib} % Superscripted numbered citations
+\geometry{margin=1in}
+\sisetup{separate-uncertainty=true}
+
+
+% Code formatting
+\lstset{
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    frame=single,
+    backgroundcolor=\color{gray!10},
+    keywordstyle=\color{blue},
+    commentstyle=\color{green!50!black},
+    stringstyle=\color{red},
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    captionpos=b,
+    inputencoding=utf8
+}
+
+% Roman numeral section numbers with period
+\renewcommand{\thesection}{\Roman{section}.}
+
+% Center section headings using titlesec
+\titleformat{\section}{\centering\normalfont\large\bfseries}{\thesection}{1em}{}
+
+% Format subsection headings: left-aligned, smaller font, bold
+\titleformat{\subsection}{\normalfont\normalsize\bfseries}{\thesubsection}{1em}{}
+
+\begin{document}
+
+% Set font to footnotesize for smaller text
+    \footnotesize
+
+% Title and abstract block with double margins
+    \begin{adjustwidth*}{0.5in}{0.5in}
+        \begin{center}
+            \textbf{\Large Acoustic Field Imaging}\\[0.5em]
+            \textbf{SubtitleT}\\[1.5em]
+            \textit{Patrick Geraghty}\\
+            \textit{300349204} \\
+            \textit{Department of Physics, University of Ottawa, Ottawa, K1N 6N5, Ontario, Canada}\\[1em]
+
+            % Horizontal line between title and abstract
+            \begin{center}
+                \rule{0.5\linewidth}{0.5pt}
+            \end{center}
+
+            % Abstract section without visible title
+            \begin{adjustwidth}{0in}{0in}
+                \input{abstract}
+            \end{adjustwidth}
+        \end{center}
+    \end{adjustwidth*}
+
+% Horizontal line between abstract and main content
+    \begin{center}
+        \rule{0.5\linewidth}{0.5pt}
+    \end{center}
+
+% Increase column separation for readability
+    \setlength{\columnsep}{2em}
+
+% Two-column content
+    \begin{multicols}{2}
+
+        \section{Introduction}\label{sec:introduction}
+        \input{introduction}
+
+        \section{Theory}\label{sec:theory}
+        \input{theory}
+
+        \section{Experimental Setup}\label{sec:experimental_setup}
+        \input{experimental_setup}
+
+        \section{Methods}\label{sec:methods}
+        \input{methods}
+
+        \section{Data and Results}\label{sec:data_and_results}
+        \input{data_and_results}
+
+        \section{Discussion}\label{sec:discussion}
+        \input{discussion}
+
+        \section{Conclusion}\label{sec:conclusion}
+        \input{conclusion}
+
+        \section*{Acknowledgments}\label{sec:acknowledgments}
+        \input{acknowledgments}
+
+        % Appendix
+        \appendix
+        \input{appendix}
+
+    \end{multicols}
+
+% Centered horizontal line between conclusion and references
+    \begin{center}
+        \rule{0.5\linewidth}{0.5pt}
+    \end{center}
+
+% References in a true two-column environment
+    \setlength{\multicolsep}{0pt}
+    \begin{multicols}{2}
+        \raggedright
+        % Remove the "References" header
+        \renewcommand{\refname}{}
+        % Prevent splitting individual bibliography entries across columns
+        \interlinepenalty=10000
+        \bibliographystyle{plain}
+        \bibliography{main}
+    \end{multicols}
+
+% End of document
+\end{document}
