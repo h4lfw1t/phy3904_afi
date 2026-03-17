@@ -6,10 +6,18 @@ authors = [
     {name = "h4lfw1t",email = "graysonofgotham2112@gmail.com"}
 ]
 readme = "README.md"
-requires-python = "^3.13"
+requires-python = "^3.12"
 dependencies = [
+    "matplotlib (>=3.10.8,<4.0.0)",
+    "pandas (>=3.0.1,<4.0.0)",
+    "numpy (>=2.4.3,<3.0.0)",
+    "scipy (>=1.17.1,<2.0.0)",
+    "pandas-stubs (>=3.0.0.260204,<4.0.0.0)",
+    "scipy-stubs (>=1.17.1.2,<2.0.0.0)"
 ]
 
+[tool.poetry]
+package-mode = false
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
