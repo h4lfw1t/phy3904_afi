@@ -421,3 +421,5 @@ $RECYCLE.BIN/
 
 # End of https://www.toptal.com/developers/gitignore/api/windows,python,venv,jetbrains,matlab,macos,linux
 /.idea/material_theme_project_new.xml
+.idea/misc.xml
+.idea/phy3904_afi.iml
