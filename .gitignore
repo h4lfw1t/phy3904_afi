@@ -423,3 +423,4 @@ $RECYCLE.BIN/
 /.idea/material_theme_project_new.xml
 .idea/misc.xml
 .idea/phy3904_afi.iml
+src/output/*
