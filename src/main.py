@@ -60,11 +60,18 @@ def generate_theoretical_model(grid_size: int = 9) -> AcousticFieldData:
     # Simulate ideal point source at center
     center_x, center_y = 4.5, 4.5
     r = np.sqrt((x_pos - center_x)**2 + (y_pos - center_y)**2)
-    amp = np.where(r > 0, 1.0 / r, 1.0)
+
+    # Handle singularity at center
+    r_safe = np.where(r > 0, r, 1.0)
+    amp = 1.0 / r_safe
+    amp = np.where(r > 0, amp, np.max(amp[r > 0]))
     normalized_amp = amp / np.max(amp)
 
-    dx = np.where(r > 0, (x_pos - center_x) / r, 1.0)
-    dy = np.where(r > 0, (y_pos - center_y) / r, 1.0)
+    dx = (x_pos - center_x) / r_safe
+    dy = (y_pos - center_y) / r_safe
+
+    dx = np.where(r > 0, dx, 1.0)
+    dy = np.where(r > 0, dy, 1.0)
 
     # Create theoretical data
     x_comp = normalized_amp * dx
@@ -99,8 +106,10 @@ def process_example_data():
     viz.plot_combined(save_path=figures_dir / 'combined_view.png')
     viz.plot_amplitude_heatmap(save_path=figures_dir / 'amplitude_heatmap.png')
     viz.plot_phase_heatmap(save_path=figures_dir / 'phase_heatmap.png')
-    viz.plot_contours(save_path=figures_dir / 'contours.png')
-    viz.plot_3d_surface(save_path=figures_dir / '3d_surface.png')
+    viz.plot_amplitude_contours(save_path=figures_dir / 'amplitude_contours.png')
+    viz.plot_phase_contours(save_path=figures_dir / 'phase_contours.png')
+    viz.plot_amplitude_3d_surface(save_path=figures_dir / 'amplitude_3d_surface.png')
+    viz.plot_phase_3d_surface(save_path=figures_dir / 'phase_3d_surface.png')
 
     print(f"\n✓ Analysis complete! Results saved to '{output_dir}' directory.")
     print(f"✓ Processed data saved to '{data_dir}' directory.")
@@ -133,8 +142,10 @@ def process_theoretical_data():
     viz.plot_combined(save_path=figures_dir / 'combined_view.png')
     viz.plot_amplitude_heatmap(save_path=figures_dir / 'amplitude_heatmap.png')
     viz.plot_phase_heatmap(save_path=figures_dir / 'phase_heatmap.png')
-    viz.plot_contours(save_path=figures_dir / 'contours.png')
-    viz.plot_3d_surface(save_path=figures_dir / '3d_surface.png')
+    viz.plot_amplitude_contours(save_path=figures_dir / 'amplitude_contours.png')
+    viz.plot_phase_contours(save_path=figures_dir / 'phase_contours.png')
+    viz.plot_amplitude_3d_surface(save_path=figures_dir / 'amplitude_3d_surface.png')
+    viz.plot_phase_3d_surface(save_path=figures_dir / 'phase_3d_surface.png')
 
     print(f"\n✓ Analysis complete! Results saved to '{output_dir}' directory.")
     print(f"✓ Processed data saved to '{data_dir}' directory.")
@@ -176,8 +187,10 @@ def process_real_data(csv_path: str, output_name: str = 'analysis'):
     viz.plot_combined(save_path=figures_dir / f'{output_name}_combined.png')
     viz.plot_amplitude_heatmap(save_path=figures_dir / f'{output_name}_amplitude.png')
     viz.plot_phase_heatmap(save_path=figures_dir / f'{output_name}_phase.png')
-    viz.plot_contours(save_path=figures_dir / f'{output_name}_contours.png')
-    viz.plot_3d_surface(save_path=figures_dir / f'{output_name}_3d.png')
+    viz.plot_amplitude_contours(save_path=figures_dir / f'{output_name}_amplitude_contours.png')
+    viz.plot_phase_contours(save_path=figures_dir / f'{output_name}_phase_contours.png')
+    viz.plot_amplitude_3d_surface(save_path=figures_dir / f'{output_name}_amplitude_3d.png')
+    viz.plot_phase_3d_surface(save_path=figures_dir / f'{output_name}_phase_3d.png')
 
     print(f"\n✓ Analysis complete! Results saved to '{output_dir}' directory.")
 
@@ -195,8 +208,8 @@ if __name__ == '__main__':
     print("="*60)
     process_theoretical_data()
 
-    # Example 3: Process real data (uncomment and modify when you have real data)
-    # print("\n" + "="*60)
-    # print("PROCESSING REAL DATA")
-    # print("="*60)
-    # process_real_data('data/raw/measurement_001.csv', output_name='measurement_001')
+    # Example 3: Process real data
+    print("\n" + "="*60)
+    print("PROCESSING REAL DATA")
+    print("="*60)
+    process_real_data(f'{DATA_DIR}/raw/PHY3904_BaEP_preliminary_absolute_phase_values.csv', output_name='PHY3904_BaEP_preliminary_absolute_phase_values')

@@ -5,11 +5,16 @@ Provides various plotting functions for analyzing acoustic field measurements.
 
 import numpy as np
 import matplotlib.pyplot as plt
+from enum import Enum
 from scipy.interpolate import griddata
 from typing import Tuple, Optional
 
 from .data import AcousticFieldData
 
+class DataType(Enum):
+    """Enumeration for acoustic field data types"""
+    AMPLITUDE = 'amplitude'
+    PHASE = 'phase'
 
 class AcousticFieldVisualizer:
     """Visualization tools for acoustic field data."""
@@ -67,34 +72,7 @@ class AcousticFieldVisualizer:
         save_path : str, optional
             Path to save the figure
         """
-        xi_grid, yi_grid, amp_grid, _ = self._prepare_grid()
-
-        fig, ax = plt.subplots(figsize=figsize)
-
-        # Plot heatmap
-        im = ax.pcolormesh(xi_grid, yi_grid, amp_grid, cmap=cmap, shading='auto')
-
-        # Optionally show measurement points
-        if show_points:
-            ax.scatter(self.data.x_pos, self.data.y_pos, c='red',
-                       s=20, marker='x', alpha=0.5, label='Measurement points')
-            ax.legend()
-
-        ax.set_xlabel('X Position')
-        ax.set_ylabel('Y Position')
-        ax.set_title('Acoustic Field Amplitude Map')
-        ax.set_aspect('equal')
-
-        cbar = plt.colorbar(im, ax=ax)
-        cbar.set_label('Amplitude')
-
-        plt.tight_layout()
-
-        if save_path:
-            plt.savefig(save_path, dpi=300, bbox_inches='tight')
-            print(f"Amplitude heatmap saved to {save_path}")
-
-        plt.show()
+        return self._plot_heatmap(DataType.AMPLITUDE, figsize, cmap, show_points, save_path)
 
     def plot_phase_heatmap(self, figsize: Tuple[int, int] = (10, 8),
                            cmap: str = 'twilight', show_points: bool = True,
@@ -113,38 +91,89 @@ class AcousticFieldVisualizer:
         save_path : str, optional
             Path to save the figure
         """
-        xi_grid, yi_grid, _, phase_grid = self._prepare_grid()
+        return self._plot_heatmap(DataType.PHASE, figsize, cmap, show_points, save_path)
 
+    def _plot_heatmap(self, data_type: DataType = DataType.AMPLITUDE,
+                      figsize: Tuple[int, int] = (10, 8),
+                      cmap: str = 'twilight', show_points: bool = True,
+                      save_path: Optional[str] = None) -> None:
+        """
+        Create a heatmap of the acoustic field data.
+
+        :param data_type: DataType
+            Which data to plot (AMPLITUDE or PHASE)
+        figsize : tuple
+            Figure size (width, height)
+        cmap : str
+            Colormap name (twilight is good for phase)
+        show_points : bool
+            Whether to show measurement points
+        save_path : str, optional
+            Path to save the figure
+        """
+        config = {
+            DataType.AMPLITUDE: {
+                'data': None,
+                'default_cmap': 'viridis',
+                'title': 'Acoustic Field Amplitude Map',
+                'cbar_label': 'Amplitude',
+                'point_color': 'red',
+                'vmin': None,
+                'vmax': None,
+            },
+            DataType.PHASE: {
+                'data': None,
+                'default_cmap': 'twilight',
+                'title': 'Acoustic Field Phase Map',
+                'cbar_label': 'Phase (radians)',
+                'point_color': 'black',
+                'vmin': -np.pi,
+                'vmax': np.pi,
+            }
+        }
+
+        # Get grids
+        xi_grid, yi_grid, amp_grid, phase_grid = self._prepare_grid()
+        config[DataType.AMPLITUDE]['data'] = amp_grid
+        config[DataType.PHASE]['data'] = phase_grid
+
+        # Get data type settings
+        settings = config[data_type]
+        cmap = cmap or settings['default_cmap']
+
+        # Create plot
         fig, ax = plt.subplots(figsize=figsize)
 
         # Plot heatmap
-        im = ax.pcolormesh(xi_grid, yi_grid, phase_grid, cmap=cmap,
-                           shading='auto', vmin=-np.pi, vmax=np.pi)
+        im = ax.pcolormesh(xi_grid, yi_grid, settings['data'], cmap=cmap,
+                           shading='auto', vmin=settings['vmin'], vmax=settings['vmax'])
 
         # Optionally show measurement points
         if show_points:
-            ax.scatter(self.data.x_pos, self.data.y_pos, c='black',
+            ax.scatter(self.data.x_pos, self.data.y_pos, c=settings['point_color'],
                        s=20, marker='x', alpha=0.5, label='Measurement points')
             ax.legend()
 
         ax.set_xlabel('X Position')
         ax.set_ylabel('Y Position')
-        ax.set_title('Acoustic Field Phase Map')
+        ax.set_title(settings['title'])
         ax.set_aspect('equal')
 
         cbar = plt.colorbar(im, ax=ax)
-        cbar.set_label('Phase (radians)')
+        cbar.set_label(settings['cbar_label'])
 
         plt.tight_layout()
 
         if save_path:
             plt.savefig(save_path, dpi=300, bbox_inches='tight')
-            print(f"Phase heatmap saved to {save_path}")
+            print(f"{settings['title']} saved to {save_path}")
 
         plt.show()
 
-    def plot_contours(self, num_levels: int = 15, figsize: Tuple[int, int] = (10, 8),
-                      cmap: str = 'viridis', save_path: Optional[str] = None) -> None:
+    def plot_amplitude_contours(self, num_levels: int = 15,
+                               figsize: Tuple[int, int] = (10, 8),
+                               cmap: str = 'viridis',
+                               save_path: Optional[str] = None) -> None:
         """
         Create contour plot of the amplitude field.
 
@@ -159,30 +188,100 @@ class AcousticFieldVisualizer:
         save_path : str, optional
             Path to save the figure
         """
-        xi_grid, yi_grid, amp_grid, _ = self._prepare_grid()
+        return self._plot_contours(DataType.AMPLITUDE, num_levels, figsize, cmap, save_path)
 
+    def plot_phase_contours(self, num_levels: int = 15,
+                               figsize: Tuple[int, int] = (10, 8),
+                               cmap: str = 'twilight',
+                               save_path: Optional[str] = None) -> None:
+        """
+        Create contour plot of the phase field.
+
+        Parameters:
+        -----------
+        num_levels : int
+            Number of contour levels
+        figsize : tuple
+            Figure size
+        cmap : str
+            Colormap name
+        save_path : str, optional
+            Path to save the figure
+        """
+        return self._plot_contours(DataType.PHASE, num_levels, figsize, cmap, save_path)
+
+    def _plot_contours(self, data_type: DataType = DataType.AMPLITUDE,
+                      num_levels: int = 15, figsize: Tuple[int, int] = (10, 8),
+                      cmap: str = 'viridis', save_path: Optional[str] = None) -> None:
+        """
+        Create contour plot of the acoustic field data.
+
+        :param data_type: DataType
+            Which data to plot (AMPLITUDE or PHASE)
+        :param num_levels: int
+            Number of contour levels
+        :param figsize: tuple
+            Figure size
+        :param cmap: str
+            Colormap name
+        :param save_path: str, optional
+            Path to save the figure
+        :return:
+        """
+        config = {
+            DataType.AMPLITUDE: {
+                'data': None,
+                'default_cmap': 'viridis',
+                'title': 'Acoustic Field Amplitude Contours',
+                'cbar_label': 'Amplitude',
+                'point_color': 'red',
+                'vmin': None,
+                'vmax': None,
+            },
+            DataType.PHASE: {
+                'data': None,
+                'default_cmap': 'twilight',
+                'title': 'Acoustic Field Phase Contours',
+                'cbar_label': 'Phase (radians)',
+                'point_color': 'red',
+                'vmin': -np.pi,
+                'vmax': np.pi,
+            }
+        }
+
+        # Get grids
+        xi_grid, yi_grid, amp_grid, phase_grid = self._prepare_grid()
+        config[DataType.AMPLITUDE]['data'] = amp_grid
+        config[DataType.PHASE]['data'] = phase_grid
+
+        # Get data type settings
+        settings = config[data_type]
+        num_levels = num_levels or settings['num_levels']
+        cmap = cmap or settings['default_cmap']
+
+        # Create plot
         fig, ax = plt.subplots(figsize=figsize)
 
         # Plot filled contours
-        contourf = ax.contourf(xi_grid, yi_grid, amp_grid, levels=num_levels, cmap=cmap)
+        contourf = ax.contourf(xi_grid, yi_grid, settings['data'], levels=num_levels, cmap=cmap)
 
         # Plot contour lines
-        contour = ax.contour(xi_grid, yi_grid, amp_grid, levels=num_levels,
+        contour = ax.contour(xi_grid, yi_grid, settings['data'], levels=num_levels,
                              colors='black', alpha=0.3, linewidths=0.5)
         ax.clabel(contour, inline=True, fontsize=8)
 
         # Show measurement points
-        ax.scatter(self.data.x_pos, self.data.y_pos, c='red',
+        ax.scatter(self.data.x_pos, self.data.y_pos, c=settings['point_color'],
                    s=20, marker='x', alpha=0.5, label='Measurement points')
 
         ax.set_xlabel('X Position')
         ax.set_ylabel('Y Position')
-        ax.set_title('Acoustic Field Amplitude Contours')
+        ax.set_title(settings['title'])
         ax.set_aspect('equal')
         ax.legend()
 
         cbar = plt.colorbar(contourf, ax=ax)
-        cbar.set_label('Amplitude')
+        cbar.set_label(settings['cbar_label'])
 
         plt.tight_layout()
 
@@ -192,8 +291,9 @@ class AcousticFieldVisualizer:
 
         plt.show()
 
-    def plot_3d_surface(self, figsize: Tuple[int, int] = (12, 9),
-                        cmap: str = 'viridis', save_path: Optional[str] = None) -> None:
+    def plot_amplitude_3d_surface(self, figsize: Tuple[int, int] = (12, 9),
+                                  cmap: str = 'viridis',
+                                  save_path: Optional[str] = None) -> None:
         """
         Create 3D surface plot of the amplitude field.
 
@@ -206,21 +306,79 @@ class AcousticFieldVisualizer:
         save_path : str, optional
             Path to save the figure
         """
-        xi_grid, yi_grid, amp_grid, _ = self._prepare_grid()
+        return self._plot_3d_surface(DataType.AMPLITUDE, figsize, cmap, save_path)
 
+    def plot_phase_3d_surface(self, figsize: Tuple[int, int] = (12, 9),
+                                  cmap: str = 'twilight',
+                                  save_path: Optional[str] = None) -> None:
+        """
+        Create 3D surface plot of the phase field.
+
+        Parameters:
+        -----------
+        figsize : tuple
+            Figure size
+        cmap : str
+            Colormap name
+        save_path : str, optional
+            Path to save the figure
+        """
+        return self._plot_3d_surface(DataType.PHASE, figsize, cmap, save_path)
+
+    def _plot_3d_surface(self, data_type: DataType = DataType.AMPLITUDE,
+                         figsize: Tuple[int, int] = (12, 9),
+                         cmap: str = 'viridis',
+                         save_path: Optional[str] = None) -> None:
+        """
+        Create 3D surface plot of the amplitude field.
+
+        Parameters:
+        -----------
+        figsize : tuple
+            Figure size
+        cmap : str
+            Colormap name
+        save_path : str, optional
+            Path to save the figure
+        """
+        config = {
+            DataType.AMPLITUDE: {
+                'data': None,
+                'default_cmap': 'viridis',
+                'title': 'Acoustic Field Amplitude Surface',
+                'cbar_label': 'Amplitude',
+            },
+            DataType.PHASE: {
+                'data': None,
+                'default_cmap': 'twilight',
+                'title': 'Acoustic Field Phase Surface',
+                'cbar_label': 'Phase (radians)',
+            }
+        }
+
+        # Get grids
+        xi_grid, yi_grid, amp_grid, phase_grid = self._prepare_grid()
+        config[DataType.AMPLITUDE]['data'] = amp_grid
+        config[DataType.PHASE]['data'] = phase_grid
+
+        # Get data type settings
+        settings = config[data_type]
+        cmap = cmap or settings['default_cmap']
+
+        # Create plot
         fig = plt.figure(figsize=figsize)
         ax = fig.add_subplot(111, projection='3d')
 
         # Plot surface
-        surf = ax.plot_surface(xi_grid, yi_grid, amp_grid, cmap=cmap,
+        surf = ax.plot_surface(xi_grid, yi_grid, settings['data'], cmap=cmap,
                                edgecolor='none', alpha=0.9)
 
         ax.set_xlabel('X Position')
         ax.set_ylabel('Y Position')
-        ax.set_zlabel('Amplitude')
-        ax.set_title('Acoustic Field 3D Surface')
+        ax.set_zlabel(settings['cbar_label'])
+        ax.set_title(settings['title'])
 
-        fig.colorbar(surf, ax=ax, shrink=0.5, label='Amplitude')
+        fig.colorbar(surf, ax=ax, shrink=0.5, label=settings['cbar_label'])
 
         plt.tight_layout()
 
