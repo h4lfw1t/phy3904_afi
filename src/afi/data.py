@@ -12,7 +12,8 @@ class AcousticFieldData:
     """Handles acoustic field data processing and analysis."""
 
     def __init__(self, x_positions: np.ndarray, y_positions: np.ndarray,
-                 x_component: np.ndarray, y_component: np.ndarray):
+                 x_component: np.ndarray, y_component: np.ndarray,
+                 z_position: float = 0.4):
         """
         Initialize acoustic field data.
 
@@ -26,11 +27,14 @@ class AcousticFieldData:
             X (in-phase) component from lock-in amplifier
         y_component : np.ndarray
             Y (quadrature) component from lock-in amplifier
+        z_position: float, optional
+            Z coordinate of measurement points (default: 0.4 m)
         """
         self.x_pos = np.asarray(x_positions)
         self.y_pos = np.asarray(y_positions)
         self.x_comp = np.asarray(x_component)
         self.y_comp = np.asarray(y_component)
+        self.z_pos = z_position
 
         # Validate data
         if not (len(self.x_pos) == len(self.y_pos) == len(self.x_comp) == len(self.y_comp)):
@@ -39,6 +43,46 @@ class AcousticFieldData:
         # Calculate derived quantities
         self.amplitude = np.sqrt(self.x_comp**2 + self.y_comp**2)
         self.phase = np.arctan2(self.y_comp, self.x_comp)  # Phase in radians
+
+        # Calculate unwrapped phase
+        self.unwrapped_phase = self._unwrap_phase(self.phase)
+
+        # Calculate theoretical phase model
+        self.theoretical_phase = self._calculate_theoretical_phase()
+
+        # Calculate relative phase
+        self.relative_phase = self._calculate_relative_phase(self.phase)
+
+    def _unwrap_phase(self, phase: np.ndarray) -> np.ndarray:
+        return np.unwrap(phase)
+
+    def _calculate_theoretical_phase(self, k: float = 2 * np.pi / 2000) -> np.ndarray:
+        r = np.sqrt(self.x_pos**2 + self.y_pos**2 + self.z_pos**2)
+        return k * (r - self.z_pos)
+
+    def _calculate_relative_phase(self, phase: np.ndarray) -> np.ndarray:
+        """
+        Determines the relative phase by comparing phase values radially with the center of the acoustic field.
+
+        Parameters:
+        -----------
+        phase : np.ndarray
+            Phase values in radians
+
+        Returns:
+        --------
+        np.ndarray
+            Relative phase values in radians
+        """
+        # Find phase where x and y positions are zero
+        center_mask = (self.x_pos == 0) & (self.y_pos == 0)
+
+        if not np.any(center_mask):
+            raise ValueError("No measurement points at the center (x_pos=0, y_pos=0)")
+
+        center_phase = phase[center_mask][0]
+
+        return phase - center_phase
 
     @classmethod
     def from_csv(cls, filepath: str) -> 'AcousticFieldData':

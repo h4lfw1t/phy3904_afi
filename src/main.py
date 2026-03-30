@@ -142,6 +142,9 @@ def process_theoretical_data():
     viz.plot_combined(save_path=figures_dir / 'combined_view.png')
     viz.plot_amplitude_heatmap(save_path=figures_dir / 'amplitude_heatmap.png')
     viz.plot_phase_heatmap(save_path=figures_dir / 'phase_heatmap.png')
+    viz.plot_unwrapped_phase_heatmap(save_path=figures_dir / 'unwrapped_phase_heatmap.png')
+    viz.plot_theoretical_phase_heatmap(save_path=figures_dir / 'theoretical_phase_heatmap.png')
+    viz.plot_relative_phase_heatmap(save_path=figures_dir / 'relative_phase_heatmap.png')
     viz.plot_amplitude_contours(save_path=figures_dir / 'amplitude_contours.png')
     viz.plot_phase_contours(save_path=figures_dir / 'phase_contours.png')
     viz.plot_amplitude_3d_surface(save_path=figures_dir / 'amplitude_3d_surface.png')
@@ -187,6 +190,9 @@ def process_real_data(csv_path: str, output_name: str = 'analysis'):
     viz.plot_combined(save_path=figures_dir / f'{output_name}_combined.png')
     viz.plot_amplitude_heatmap(save_path=figures_dir / f'{output_name}_amplitude.png')
     viz.plot_phase_heatmap(save_path=figures_dir / f'{output_name}_phase.png')
+    viz.plot_unwrapped_phase_heatmap(save_path=figures_dir / f'{output_name}_unwrapped_phase.png')
+    viz.plot_theoretical_phase_heatmap(save_path=figures_dir / f'{output_name}_theoretical_phase.png')
+    viz.plot_relative_phase_heatmap(save_path=figures_dir / f'{output_name}_relative_phase.png')
     viz.plot_amplitude_contours(save_path=figures_dir / f'{output_name}_amplitude_contours.png')
     viz.plot_phase_contours(save_path=figures_dir / f'{output_name}_phase_contours.png')
     viz.plot_amplitude_3d_surface(save_path=figures_dir / f'{output_name}_amplitude_3d.png')
@@ -196,11 +202,11 @@ def process_real_data(csv_path: str, output_name: str = 'analysis'):
 
 
 if __name__ == '__main__':
-    # Example 1: Process synthetic example data
-    print("="*60)
-    print("EXAMPLE: Processing synthetic data")
-    print("="*60)
-    process_example_data()
+    # # Example 1: Process synthetic example data
+    # print("="*60)
+    # print("EXAMPLE: Processing synthetic data")
+    # print("="*60)
+    # process_example_data()
 
     # Example 2: Process theoretical model
     print("\n" + "="*60)
