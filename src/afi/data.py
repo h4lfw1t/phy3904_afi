@@ -5,6 +5,7 @@ Handles loading, processing, and statistical analysis of lock-in amplifier data.
 
 import numpy as np
 import pandas as pd
+from skimage.restoration import unwrap_phase
 from typing import Dict
 
 
@@ -13,7 +14,8 @@ class AcousticFieldData:
 
     def __init__(self, x_positions: np.ndarray, y_positions: np.ndarray,
                  x_component: np.ndarray, y_component: np.ndarray,
-                 z_position: float = 0.4):
+                 z_position: float = 0.4, center_x: float = 0.045,
+                 center_y: float = 0.045):
         """
         Initialize acoustic field data.
 
@@ -29,12 +31,18 @@ class AcousticFieldData:
             Y (quadrature) component from lock-in amplifier
         z_position: float, optional
             Z coordinate of measurement points (default: 0.4 m)
+        center_x: float, optional
+            X coordinate of emitter center (default: 0.045 m)
+        center_y: float, optional
+            Y coordinate of emitter center (default: 0.045 m)
         """
         self.x_pos = np.asarray(x_positions)
         self.y_pos = np.asarray(y_positions)
         self.x_comp = np.asarray(x_component)
         self.y_comp = np.asarray(y_component)
         self.z_pos = z_position
+        self.center_x = center_x
+        self.center_y = center_y
 
         # Validate data
         if not (len(self.x_pos) == len(self.y_pos) == len(self.x_comp) == len(self.y_comp)):
@@ -45,7 +53,7 @@ class AcousticFieldData:
         self.phase = np.arctan2(self.y_comp, self.x_comp)  # Phase in radians
 
         # Calculate unwrapped phase
-        self.unwrapped_phase = self._unwrap_phase(self.phase)
+        self.unwrapped_phase = self._unwrap_phase_2d(self.phase)
 
         # Calculate theoretical phase model
         self.theoretical_phase = self._calculate_theoretical_phase()
@@ -53,11 +61,39 @@ class AcousticFieldData:
         # Calculate relative phase
         self.relative_phase = self._calculate_relative_phase(self.phase)
 
-    def _unwrap_phase(self, phase: np.ndarray) -> np.ndarray:
-        return np.unwrap(phase)
+    def _unwrap_phase_2d(self, phase: np.ndarray) -> np.ndarray:
+        """
+                Unwraps phase over a 2D spatial grid to prevent artificial
+                discontinuities at row boundaries.
+                """
+        # 1. Ascertain the grid dimensions from the coordinate vectors
+        nx = len(np.unique(self.x_pos))
+        ny = len(np.unique(self.y_pos))
 
-    def _calculate_theoretical_phase(self, k: float = 2 * np.pi / 2000) -> np.ndarray:
-        r = np.sqrt(self.x_pos**2 + self.y_pos**2 + self.z_pos**2)
+        # Verify that the flattened vectors map perfectly to a 2D rectangle
+        if nx * ny != len(phase):
+            raise ValueError("Spatial coordinates do not map to a complete rectangular grid.")
+
+        # 2. Reshape the 1D phase array into the proper 2D spatial matrix.
+        # When using np.meshgrid with the default 'xy' indexing,
+        # the resulting shape corresponds to (ny, nx).
+        phase_matrix = phase.reshape((ny, nx))
+
+        # 3. Execute the 2D unwrapping algorithm
+        unwrapped_matrix = unwrap_phase(phase_matrix)
+
+        # 4. Flatten the matrix back to a 1D array to maintain parity
+        # with our x_pos and y_pos vectors
+        return unwrapped_matrix.flatten()
+
+    def _calculate_theoretical_phase(self, f: float = 2000.0) -> np.ndarray:
+        k = 2 * np.pi * f / 343.0  # Wave number in rad/m
+
+        dx_m = (self.x_pos - self.center_x) * 0.01
+        dy_m = (self.y_pos - self.center_y) * 0.01
+
+        r = np.sqrt(dx_m**2 + dy_m**2 + self.z_pos**2)
+
         return k * (r - self.z_pos)
 
     def _calculate_relative_phase(self, phase: np.ndarray) -> np.ndarray:

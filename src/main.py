@@ -39,16 +39,27 @@ def generate_example_data(grid_size: int = 9) -> AcousticFieldData:
 
     return AcousticFieldData(x_pos, y_pos, x_comp, y_comp)
 
-def generate_theoretical_model(grid_size: int = 9) -> AcousticFieldData:
+def generate_theoretical_model(grid_size: int = 9,
+                               f: float = 2000.0) -> AcousticFieldData:
     """
     Generate first-order theoretical model of the acoustic field.
 
     :param grid_size: Size of the grid (grid_size x grid_size points)
     :type grid_size: int
+    :param f: Frequency of the wave (Hz)
+    :type f: float, optional
     :return: AcousticFieldData object with theoretical data
     :rtype: AcousticFieldData
     """
     print(f"Generating theoretical model for a {grid_size}x{grid_size} grid...")
+
+    # Acoustic Constants
+    v = 343.0                   # Speed of sound in m/s
+    k = 2 * np.pi * f / v       # Wave number in rad/m
+
+    # Emitter position parameters
+    z0 = 0.40       # cm
+    center_x, center_y = 4.5, 4.5
 
     # Create grid
     x = np.linspace(0, 9, grid_size)
@@ -57,25 +68,22 @@ def generate_theoretical_model(grid_size: int = 9) -> AcousticFieldData:
     x_pos = xx.flatten()
     y_pos = yy.flatten()
 
-    # Simulate ideal point source at center
-    center_x, center_y = 4.5, 4.5
-    r = np.sqrt((x_pos - center_x)**2 + (y_pos - center_y)**2)
+    # Calculate true 3D distance from emitter to microphone
+    dx_m = (x_pos - center_x) * 0.01  # Convert cm to m
+    dy_m = (y_pos - center_y) * 0.01  # Convert cm to m
 
-    # Handle singularity at center
-    r_safe = np.where(r > 0, r, 1.0)
-    amp = 1.0 / r_safe
-    amp = np.where(r > 0, amp, np.max(amp[r > 0]))
+    r_3d = np.sqrt(dx_m**2 + dy_m**2 + z0**2)
+
+    # Calculate amplitude (1/r)
+    amp = 1.0 / r_3d
     normalized_amp = amp / np.max(amp)
 
-    dx = (x_pos - center_x) / r_safe
-    dy = (y_pos - center_y) / r_safe
+    # Calculate phase (k*r)
+    phase = k * r_3d
 
-    dx = np.where(r > 0, dx, 1.0)
-    dy = np.where(r > 0, dy, 1.0)
-
-    # Create theoretical data
-    x_comp = normalized_amp * dx
-    y_comp = normalized_amp * dy
+    # Simulate lock-in amplifier output
+    x_comp = normalized_amp * np.cos(phase)
+    y_comp = normalized_amp * np.sin(phase)
 
     return AcousticFieldData(x_pos, y_pos, x_comp, y_comp)
 
