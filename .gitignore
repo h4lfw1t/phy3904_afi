@@ -425,3 +425,4 @@ $RECYCLE.BIN/
 .idea/phy3904_afi.iml
 src/output/**
 src/output/
+*.Zone.Identifier
