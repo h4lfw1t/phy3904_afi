@@ -223,7 +223,8 @@ if __name__ == '__main__':
     process_theoretical_data()
 
     # Example 3: Process real data
-    print("\n" + "="*60)
-    print("PROCESSING REAL DATA")
-    print("="*60)
-    process_real_data(f'{DATA_DIR}/raw/PHY3904_BaEP_preliminary_absolute_phase_values.csv', output_name='PHY3904_BaEP_preliminary_absolute_phase_values')
+    for file in DATA_DIR.glob('raw/*.csv'):
+        print("\n" + "="*60)
+        print(f"PROCESSING REAL DATA: {file.name}")
+        print("="*60)
+        process_real_data(file, output_name=file.stem)
