@@ -238,4 +238,4 @@ if __name__ == '__main__':
     print("\n" + "="*60)
     print("PROCESSING REAL DATA")
     print("="*60)
-    process_real_data(f'{DATA_DIR}/raw/PHY3904_BaEP_2kHz.csv', output_name='2khz')
+    process_real_data(f'{DATA_DIR}/raw/PHY3904_BaEP_3kHz.csv', output_name='3khz')
