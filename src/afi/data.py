@@ -89,8 +89,8 @@ class AcousticFieldData:
     def _calculate_theoretical_phase(self, f: float = 2000.0) -> np.ndarray:
         k = 2 * np.pi * f / 343.0  # Wave number in rad/m
 
-        dx_m = (self.x_pos - self.center_x) * 0.01
-        dy_m = (self.y_pos - self.center_y) * 0.01
+        dx_m = self.x_pos * 0.01
+        dy_m = self.y_pos * 0.01
 
         r = np.sqrt(dx_m**2 + dy_m**2 + self.z_pos**2)
 

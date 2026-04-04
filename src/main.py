@@ -58,7 +58,7 @@ def generate_theoretical_model(grid_size: int = 9,
     k = 2 * np.pi * f / v       # Wave number in rad/m
 
     # Emitter position parameters
-    z0 = 0.40       # cm
+    z0 = 0.40       # m
     center_x, center_y = 4.5, 4.5
 
     # Create grid
@@ -69,8 +69,8 @@ def generate_theoretical_model(grid_size: int = 9,
     y_pos = yy.flatten()
 
     # Calculate true 3D distance from emitter to microphone
-    dx_m = (x_pos - center_x) * 0.01  # Convert cm to m
-    dy_m = (y_pos - center_y) * 0.01  # Convert cm to m
+    dx_m = x_pos * 0.01  # Convert cm to m
+    dy_m = y_pos * 0.01  # Convert cm to m
 
     r_3d = np.sqrt(dx_m**2 + dy_m**2 + z0**2)
 
