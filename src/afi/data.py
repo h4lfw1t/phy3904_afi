@@ -49,7 +49,10 @@ class AcousticFieldData:
             raise ValueError("All input arrays must have the same length")
 
         # Calculate derived quantities
-        self.amplitude = np.sqrt(self.x_comp**2 + self.y_comp**2)
+        center_mask = (self.x_pos == 0) & (self.y_pos == 0)
+        
+        A0 = np.sqrt(self.x_comp[center_mask]**2 + self.y_comp[center_mask]**2)[0]
+        self.amplitude = np.sqrt(self.x_comp**2 + self.y_comp**2)/A0 
         self.phase = np.arctan2(self.y_comp, self.x_comp)  # Phase in radians
 
         # Calculate unwrapped phase

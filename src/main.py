@@ -73,28 +73,29 @@ def generate_theoretical_model(grid_size: int = 9,
     center_x, center_y = 22, 22
 
     # Create grid
-    x = np.linspace(0, 9, grid_size)
-    y = np.linspace(0, 9, grid_size)
+    x = np.linspace(-4.5, 4.5, grid_size)
+    y = np.linspace(-4.5, 4.5, grid_size)
     xx, yy = np.meshgrid(x, y)
+    
+    r2 = xx**2 + yy**2
+    A0 = 1
+    amp_2d = A0 * (z0**2 / (z0**2 + r2))
+
     x_pos = xx.flatten()
     y_pos = yy.flatten()
-
+    amp = amp_2d.flatten()
     # Calculate true 3D distance from emitter to microphone
     dx_m = x_pos * 0.01  # Convert cm to m
     dy_m = y_pos * 0.01  # Convert cm to m
 
-    r_3d = np.sqrt(dx_m**2 + dy_m**2 + z0**2)
+    r_3d = np.sqrt(dx_m**2 + dy_m**2 + z0**2) 
 
-    # Calculate theoretical amplitude based on lab data (A(x,y) = A0(D2/(D2 + x2 +y2)) )
-    A0 = 1.0 #placeholder, should be experimental_data.amplitude[center_index] later
-    amp = A0 * (z0**2 / (z0**2 + dx_m**2 + dy_m**2)) 
-
-    # Calculate theoretical relative phase 
-    phase = k * (r_3d - z0)
+    # Calculate phase 
+    phase = k * r_3d
 
     # Simulate lock-in amplifier output (not used here but included to satisfy code architecture)
-    x_comp = A0 * np.cos(phase)
-    y_comp = A0 * np.sin(phase)
+    x_comp = amp * np.cos(phase)
+    y_comp = amp * np.sin(phase)
 
     return AcousticFieldData(x_pos, y_pos, x_comp, y_comp)
 
@@ -237,4 +238,4 @@ if __name__ == '__main__':
     print("\n" + "="*60)
     print("PROCESSING REAL DATA")
     print("="*60)
-    process_real_data(f'{DATA_DIR}/raw/2khz.csv', output_name='2khz')
+    process_real_data(f'{DATA_DIR}/raw/PHY3904_BaEP_2kHz.csv', output_name='2khz')
