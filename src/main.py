@@ -138,7 +138,7 @@ def process_theoretical_data(csv_path: str, output_name: str = 'analysis'):
     exp_data = AcousticFieldData.from_csv(csv_path)
 
     # Generate theoretical model
-    data = generate_theoretical_model_from_points(exp_data.x_pos,exp_data.y_pos,f=3000.0)
+    data = generate_theoretical_model_from_points(exp_data.x_pos,exp_data.y_pos,f=2000.0)
 
     # --- Normalize theoretical amplitudes to experimental data ---
     # Find experimental center (closest point to (0,0))
@@ -246,10 +246,10 @@ if __name__ == '__main__':
     print("\n" + "="*60)
     print("EXAMPLE: Processing theoretical model")
     print("="*60)
-    process_theoretical_data(f'{DATA_DIR}/raw/PHY3904_BaEP_3kHz.csv', output_name='3khz')
+    process_theoretical_data(f'{DATA_DIR}/raw/PHY3904_BaEP_2kHz.csv', output_name='2khz')
 
     # Example 3: Process real data
     print("\n" + "="*60)
     print("PROCESSING REAL DATA")
     print("="*60)
-    process_real_data(f'{DATA_DIR}/raw/PHY3904_BaEP_3kHz.csv', output_name='3khz')
+    process_real_data(f'{DATA_DIR}/raw/PHY3904_BaEP_2kHz.csv', output_name='2khz')

@@ -50,14 +50,14 @@ class AcousticFieldVisualizer:
         )
 
         # Interpolate wrapped phase using complex representation
-        phase_complex = np.exp(1j * self.data.phase)
+        phase_complex = np.exp(1j * self.data.phase) #euler's formula (1j is imaginary unit in Python)
         phase_complex_grid = griddata(
             (self.data.x_pos, self.data.y_pos),
             phase_complex,
             (xi_grid, yi_grid),
             method='linear'  # linear avoids cubic artifacts
         )
-        phase_grid = np.angle(phase_complex_grid)
+        phase_grid = np.angle(phase_complex_grid) #reutnrs phase of complex number
 
         # Interpolate unwrapped phase using complex representation
         unwrapped_complex = np.exp(1j * self.data.unwrapped_phase)
