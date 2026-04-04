@@ -229,7 +229,7 @@ class AcousticFieldVisualizer:
             DataType.THEORETICAL_PHASE: {
                 'data': None,
                 'default_cmap': 'plasma',
-                'title': 'Theoretical Acoustic Field Phase Map',
+                'title': 'Theoretical Acoustic Field Relative Phase Map',
                 'cbar_label': 'Theoretical Phase (radians)',
                 'point_color': 'black',
                 'vmin': 0,
