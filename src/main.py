@@ -4,10 +4,16 @@ Demonstrates usage with example data and provides templates for real data proces
 """
 
 import numpy as np
-from pathlib import Path
+# pathlib provides object-oriented tools for handling file paths 
+# Path class allows representing file or directory path as an object
+from pathlib import Path 
 
 from afi import AcousticFieldData, AcousticFieldVisualizer
 
+#__file__ is a special Python variable that containes the path of the current Python file
+# Path(__file__) turns that string into a Path object from pathlib 
+#.parent.parent goes up two directories from the current file 
+# / 'out' and / 'data': using / on a Path object appends a subdirectory or filename
 OUT_DIR = Path(__file__).parent.parent / 'out'
 DATA_DIR = Path(__file__).parent.parent / 'data'
 
@@ -25,8 +31,8 @@ def generate_example_data(grid_size: int = 9) -> AcousticFieldData:
     # Create grid
     x = np.linspace(0, 9, grid_size)
     y = np.linspace(0, 9, grid_size)
-    xx, yy = np.meshgrid(x, y)
-    x_pos = xx.flatten()
+    xx, yy = np.meshgrid(x, y) #turns into 2D arrays 
+    x_pos = xx.flatten() #turn back into 1D arrays (for functions like griddata to work)
     y_pos = yy.flatten()
 
     # Simulate acoustic field (interference pattern)
@@ -34,7 +40,7 @@ def generate_example_data(grid_size: int = 9) -> AcousticFieldData:
     y_comp = np.cos(0.5 * x_pos) * np.sin(0.5 * y_pos)
 
     # Add realistic noise
-    x_comp += np.random.normal(0, 0.05, x_comp.shape)
+    x_comp += np.random.normal(0, 0.05, x_comp.shape) #(mean,std,shape)
     y_comp += np.random.normal(0, 0.05, y_comp.shape)
 
     return AcousticFieldData(x_pos, y_pos, x_comp, y_comp)
@@ -58,8 +64,8 @@ def generate_theoretical_model(grid_size: int = 9,
     k = 2 * np.pi * f / v       # Wave number in rad/m
 
     # Emitter position parameters
-    z0 = 0.40       # cm
-    center_x, center_y = 4.5, 4.5
+    z0 = 0.40       # m
+    center_x, center_y = 22, 22
 
     # Create grid
     x = np.linspace(0, 9, grid_size)
@@ -69,21 +75,21 @@ def generate_theoretical_model(grid_size: int = 9,
     y_pos = yy.flatten()
 
     # Calculate true 3D distance from emitter to microphone
-    dx_m = (x_pos - center_x) * 0.01  # Convert cm to m
-    dy_m = (y_pos - center_y) * 0.01  # Convert cm to m
+    dx_m = x_pos * 0.01  # Convert cm to m
+    dy_m = y_pos * 0.01  # Convert cm to m
 
     r_3d = np.sqrt(dx_m**2 + dy_m**2 + z0**2)
 
-    # Calculate amplitude (1/r)
-    amp = 1.0 / r_3d
-    normalized_amp = amp / np.max(amp)
+    # Calculate theoretical amplitude based on lab data (A(x,y) = A0(D2/(D2 + x2 +y2)) )
+    A0 = 1.0 #placeholder, should be experimental_data.amplitude[center_index] later
+    amp = A0 * (z0**2 / (z0**2 + dx_m**2 + dy_m**2)) 
 
-    # Calculate phase (k*r)
-    phase = k * r_3d
+    # Calculate theoretical relative phase 
+    phase = k * (r_3d - z0)
 
-    # Simulate lock-in amplifier output
-    x_comp = normalized_amp * np.cos(phase)
-    y_comp = normalized_amp * np.sin(phase)
+    # Simulate lock-in amplifier output (not used here but included to satisfy code architecture)
+    x_comp = A0 * np.cos(phase)
+    y_comp = A0 * np.sin(phase)
 
     return AcousticFieldData(x_pos, y_pos, x_comp, y_comp)
 
@@ -95,7 +101,7 @@ def process_example_data():
     figures_dir = output_dir / 'example/figures'
 
     for directory in [output_dir, data_dir, figures_dir]:
-        directory.mkdir(parents=True, exist_ok=True)
+        directory.mkdir(parents=True, exist_ok=True) #mkdir makes directory
 
     # Generate or load data
     data = generate_example_data(grid_size=9)
@@ -208,7 +214,7 @@ def process_real_data(csv_path: str, output_name: str = 'analysis'):
 
     print(f"\n✓ Analysis complete! Results saved to '{output_dir}' directory.")
 
-
+# Only run the code below if this file is being run directly, not imported 
 if __name__ == '__main__':
     # # Example 1: Process synthetic example data
     # print("="*60)
@@ -223,8 +229,7 @@ if __name__ == '__main__':
     process_theoretical_data()
 
     # Example 3: Process real data
-    for file in DATA_DIR.glob('raw/*.csv'):
-        print("\n" + "="*60)
-        print(f"PROCESSING REAL DATA: {file.name}")
-        print("="*60)
-        process_real_data(file, output_name=file.stem)
+    print("\n" + "="*60)
+    print("PROCESSING REAL DATA")
+    print("="*60)
+    process_real_data(f'{DATA_DIR}/raw/3khz.csv', output_name='3khz')
