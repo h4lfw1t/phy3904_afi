@@ -78,7 +78,7 @@ def generate_theoretical_model(grid_size: int = 9,
     xx, yy = np.meshgrid(x, y)
     
     r2 = xx**2 + yy**2
-    A0 = 1
+    A0 = 1.0 
     amp_2d = A0 * (z0**2 / (z0**2 + r2))
 
     x_pos = xx.flatten()
