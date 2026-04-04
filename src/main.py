@@ -1,6 +1,11 @@
 """
 Main script for Acoustic Field Imaging (AFI) analysis.
 Demonstrates usage with example data and provides templates for real data processing.
+
+TO RUN: 
+poetry env use "C:\Users\lucie\AppData\Local\Programs\Python\Python312\python.exe"
+poetry install 
+poetry run python src/main.py 
 """
 
 import numpy as np
@@ -232,4 +237,4 @@ if __name__ == '__main__':
     print("\n" + "="*60)
     print("PROCESSING REAL DATA")
     print("="*60)
-    process_real_data(f'{DATA_DIR}/raw/3khz.csv', output_name='3khz')
+    process_real_data(f'{DATA_DIR}/raw/2khz.csv', output_name='2khz')
