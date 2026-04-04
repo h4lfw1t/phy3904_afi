@@ -59,25 +59,21 @@ class AcousticFieldVisualizer:
         )
         phase_grid = np.angle(phase_complex_grid) #reutnrs phase of complex number
 
-        # Interpolate unwrapped phase using complex representation
-        unwrapped_complex = np.exp(1j * self.data.unwrapped_phase)
-        unwrapped_complex_grid = griddata(
+        # Interpolate unwrapped phase as a normal scalar field
+        unwrapped_phase_grid = griddata(
             (self.data.x_pos, self.data.y_pos),
-            unwrapped_complex,
+            self.data.unwrapped_phase,
             (xi_grid, yi_grid),
-            method='linear'
+            method='cubic'
         )
-        unwrapped_phase_grid = np.angle(unwrapped_complex_grid)
 
-        # Interpolate theoretical phase using complex representation
-        theoretical_complex = np.exp(1j * self.data.theoretical_phase)
-        theoretical_complex_grid = griddata(
+        # Interpolate theoretical phase as a normal scalar field
+        theoretical_phase_grid = griddata(
             (self.data.x_pos, self.data.y_pos),
-            theoretical_complex,
+            self.data.theoretical_phase,
             (xi_grid, yi_grid),
-            method='linear'
+            method='cubic'
         )
-        theoretical_phase_grid = np.angle(theoretical_complex_grid)
 
         # Interpolate relative phase normally
         relative_phase_grid = griddata(
@@ -236,7 +232,7 @@ class AcousticFieldVisualizer:
                 'title': 'Theoretical Acoustic Field Phase Map',
                 'cbar_label': 'Theoretical Phase (radians)',
                 'point_color': 'black',
-                'vmin': None,
+                'vmin': 0,
                 'vmax': None,
             },
             DataType.RELATIVE_PHASE: {
