@@ -1,4 +1,4 @@
-"""
+r"""
 Main script for Acoustic Field Imaging (AFI) analysis.
 Demonstrates usage with example data and provides templates for real data processing.
 
