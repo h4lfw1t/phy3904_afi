@@ -90,7 +90,7 @@ class AcousticFieldData:
         # with our x_pos and y_pos vectors
         return unwrapped_matrix.flatten()
 
-    def _calculate_theoretical_phase(self, f: float = 2000.0) -> np.ndarray:
+    def _calculate_theoretical_phase(self, f: float = 3000.0) -> np.ndarray:
         k = 2 * np.pi * f / 343.0  # Wave number in rad/m
 
         dx_m = (self.x_pos) * 0.01
