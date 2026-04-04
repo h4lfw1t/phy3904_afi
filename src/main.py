@@ -67,12 +67,11 @@ def generate_theoretical_model_from_points(x_pos: np.ndarray, y_pos: np.ndarray,
     dx_m = x_pos * 0.01
     dy_m = y_pos * 0.01
 
-    r2 = dx_m**2 + dy_m**2
-    A0 = 1.0
-    amp = A0 * (z0**2 / (z0**2 + r2))
-
-    # 3D distance from emitter
+     # 3D distance from emitter
     r_3d = np.sqrt(dx_m**2 + dy_m**2 + z0**2)
+    A0 = 1.0
+    amp = A0 * (z0 / r_3d)
+
     phase = k * r_3d
 
     x_comp = amp * np.cos(phase)
