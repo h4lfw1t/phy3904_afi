@@ -63,7 +63,7 @@ class AcousticFieldData:
         self.theoretical_phase = self._calculate_theoretical_phase()
 
         # Calculate relative phase
-        self.relative_phase = self._calculate_relative_phase(self.phase)
+        self.relative_phase = self._calculate_relative_phase(self.unwrapped_phase)
 
     def _unwrap_phase_2d(self, phase: np.ndarray) -> np.ndarray:
         """
