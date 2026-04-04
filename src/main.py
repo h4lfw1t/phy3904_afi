@@ -74,12 +74,12 @@ def generate_theoretical_model(grid_size: int = 9,
 
     r_3d = np.sqrt(dx_m**2 + dy_m**2 + z0**2)
 
-    # Calculate amplitude (1/r)
-    amp = 1.0 / r_3d
-    normalized_amp = amp / np.max(amp)
+    # Calculate theoretical amplitude based on our amplitude model (A0(D^2/(D^2 + x^2 +y^2)))
+    A0 = 1.0 #placeholder, should be the amplitude we measure at the center of the grid (where x_pos,y_pos = (0,0))
+    amp = A0 * (z0**2 / (z0**2 + dx_m**2 + dy_m**2))
 
-    # Calculate phase (k*r)
-    phase = k * r_3d
+    # Calculate theoretical relative phase (k*r)
+    phase = k * (r_3d - z0)
 
     # Simulate lock-in amplifier output
     x_comp = normalized_amp * np.cos(phase)
