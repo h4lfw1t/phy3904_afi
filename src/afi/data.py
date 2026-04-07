@@ -3,6 +3,8 @@ Data processing module for acoustic field measurements.
 Handles loading, processing, and statistical analysis of lock-in amplifier data.
 """
 
+from cmath import phase
+
 import numpy as np
 import pandas as pd
 from skimage.restoration import unwrap_phase
@@ -49,7 +51,9 @@ class AcousticFieldData:
             raise ValueError("All input arrays must have the same length")
 
         # Calculate derived quantities
-        self.amplitude = np.sqrt(self.x_comp**2 + self.y_comp**2)
+        center_idx = np.argmin(self.x_pos**2 + self.y_pos**2)
+        A0 = np.sqrt(self.x_comp[center_idx]**2 + self.y_comp[center_idx]**2)
+        self.amplitude = np.sqrt(self.x_comp**2 + self.y_comp**2)/A0 
         self.phase = np.arctan2(self.y_comp, self.x_comp)  # Phase in radians
 
         # Calculate unwrapped phase
@@ -59,7 +63,7 @@ class AcousticFieldData:
         self.theoretical_phase = self._calculate_theoretical_phase()
 
         # Calculate relative phase
-        self.relative_phase = self._calculate_relative_phase(self.phase)
+        self.relative_phase = self._calculate_relative_phase(self.unwrapped_phase)
 
     def _unwrap_phase_2d(self, phase: np.ndarray) -> np.ndarray:
         """
@@ -86,11 +90,11 @@ class AcousticFieldData:
         # with our x_pos and y_pos vectors
         return unwrapped_matrix.flatten()
 
-    def _calculate_theoretical_phase(self, f: float = 2000.0) -> np.ndarray:
+    def _calculate_theoretical_phase(self, f: float = 3000.0) -> np.ndarray:
         k = 2 * np.pi * f / 343.0  # Wave number in rad/m
 
-        dx_m = (self.x_pos - self.center_x) * 0.01
-        dy_m = (self.y_pos - self.center_y) * 0.01
+        dx_m = (self.x_pos) * 0.01
+        dy_m = (self.y_pos) * 0.01
 
         r = np.sqrt(dx_m**2 + dy_m**2 + self.z_pos**2)
 
@@ -111,13 +115,8 @@ class AcousticFieldData:
             Relative phase values in radians
         """
         # Find phase where x and y positions are zero
-        center_mask = (self.x_pos == 0) & (self.y_pos == 0)
-
-        if not np.any(center_mask):
-            raise ValueError("No measurement points at the center (x_pos=0, y_pos=0)")
-
-        center_phase = phase[center_mask][0]
-
+        center_idx = np.argmin(self.x_pos**2 + self.y_pos**2)
+        center_phase = phase[center_idx]
         return phase - center_phase
 
     @classmethod

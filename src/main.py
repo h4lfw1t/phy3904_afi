@@ -1,13 +1,24 @@
-"""
+r"""
 Main script for Acoustic Field Imaging (AFI) analysis.
 Demonstrates usage with example data and provides templates for real data processing.
+
+TO RUN: 
+poetry env use "C:\Users\lucie\AppData\Local\Programs\Python\Python312\python.exe"
+poetry install 
+poetry run python src/main.py 
 """
 
 import numpy as np
-from pathlib import Path
+# pathlib provides object-oriented tools for handling file paths 
+# Path class allows representing file or directory path as an object
+from pathlib import Path 
 
 from afi import AcousticFieldData, AcousticFieldVisualizer
 
+#__file__ is a special Python variable that containes the path of the current Python file
+# Path(__file__) turns that string into a Path object from pathlib 
+#.parent.parent goes up two directories from the current file 
+# / 'out' and / 'data': using / on a Path object appends a subdirectory or filename
 OUT_DIR = Path(__file__).parent.parent / 'out'
 DATA_DIR = Path(__file__).parent.parent / 'data'
 
@@ -25,8 +36,8 @@ def generate_example_data(grid_size: int = 9) -> AcousticFieldData:
     # Create grid
     x = np.linspace(0, 9, grid_size)
     y = np.linspace(0, 9, grid_size)
-    xx, yy = np.meshgrid(x, y)
-    x_pos = xx.flatten()
+    xx, yy = np.meshgrid(x, y) #turns into 2D arrays 
+    x_pos = xx.flatten() #turn back into 1D arrays (for functions like griddata to work)
     y_pos = yy.flatten()
 
     # Simulate acoustic field (interference pattern)
@@ -34,56 +45,37 @@ def generate_example_data(grid_size: int = 9) -> AcousticFieldData:
     y_comp = np.cos(0.5 * x_pos) * np.sin(0.5 * y_pos)
 
     # Add realistic noise
-    x_comp += np.random.normal(0, 0.05, x_comp.shape)
+    x_comp += np.random.normal(0, 0.05, x_comp.shape) #(mean,std,shape)
     y_comp += np.random.normal(0, 0.05, y_comp.shape)
 
     return AcousticFieldData(x_pos, y_pos, x_comp, y_comp)
 
-def generate_theoretical_model(grid_size: int = 9,
-                               f: float = 2000.0) -> AcousticFieldData:
+def generate_theoretical_model_from_points(x_pos: np.ndarray, y_pos: np.ndarray, f: float) -> AcousticFieldData:
     """
-    Generate first-order theoretical model of the acoustic field.
+    Generate theoretical acoustic field on arbitrary points (e.g., experimental positions).
 
-    :param grid_size: Size of the grid (grid_size x grid_size points)
-    :type grid_size: int
-    :param f: Frequency of the wave (Hz)
-    :type f: float, optional
-    :return: AcousticFieldData object with theoretical data
-    :rtype: AcousticFieldData
+    :param x_pos: x positions of points (same units as measurement)
+    :param y_pos: y positions of points
+    :param f: frequency in Hz
+    :return: AcousticFieldData object with x_comp, y_comp
     """
-    print(f"Generating theoretical model for a {grid_size}x{grid_size} grid...")
+    v = 343.0
+    k = 2 * np.pi * f / v
+    z0 = 0.40  # emitter height in meters
 
-    # Acoustic Constants
-    v = 343.0                   # Speed of sound in m/s
-    k = 2 * np.pi * f / v       # Wave number in rad/m
+    # Convert positions to meters if they are in cm
+    dx_m = x_pos * 0.01
+    dy_m = y_pos * 0.01
 
-    # Emitter position parameters
-    z0 = 0.40       # cm
-    center_x, center_y = 4.5, 4.5
-
-    # Create grid
-    x = np.linspace(0, 9, grid_size)
-    y = np.linspace(0, 9, grid_size)
-    xx, yy = np.meshgrid(x, y)
-    x_pos = xx.flatten()
-    y_pos = yy.flatten()
-
-    # Calculate true 3D distance from emitter to microphone
-    dx_m = (x_pos - center_x) * 0.01  # Convert cm to m
-    dy_m = (y_pos - center_y) * 0.01  # Convert cm to m
-
+     # 3D distance from emitter
     r_3d = np.sqrt(dx_m**2 + dy_m**2 + z0**2)
+    A0 = 1.0
+    amp = A0 * (z0 / r_3d)
 
-    # Calculate amplitude (1/r)
-    amp = 1.0 / r_3d
-    normalized_amp = amp / np.max(amp)
-
-    # Calculate phase (k*r)
     phase = k * r_3d
 
-    # Simulate lock-in amplifier output
-    x_comp = normalized_amp * np.cos(phase)
-    y_comp = normalized_amp * np.sin(phase)
+    x_comp = amp * np.cos(phase)
+    y_comp = amp * np.sin(phase)
 
     return AcousticFieldData(x_pos, y_pos, x_comp, y_comp)
 
@@ -95,7 +87,7 @@ def process_example_data():
     figures_dir = output_dir / 'example/figures'
 
     for directory in [output_dir, data_dir, figures_dir]:
-        directory.mkdir(parents=True, exist_ok=True)
+        directory.mkdir(parents=True, exist_ok=True) #mkdir makes directory
 
     # Generate or load data
     data = generate_example_data(grid_size=9)
@@ -123,8 +115,17 @@ def process_example_data():
     print(f"✓ Processed data saved to '{data_dir}' directory.")
     print(f"✓ Figures saved to '{figures_dir}' directory.")
 
-def process_theoretical_data():
-    """Run complete analysis pipeline on theoretical model."""
+def process_theoretical_data(csv_path: str, output_name: str = 'analysis'):
+    """
+    Run complete analysis pipeline on theoretical model, normalized to experimental data.
+
+    Parameters:
+    -----------
+    csv_path : str
+        Path to CSV file with experimental data
+    output_name : str
+        Base name for output files
+    """
     # Create output directories
     output_dir = OUT_DIR / 'theoretical'
     data_dir = DATA_DIR / 'theoretical/processed'
@@ -133,8 +134,33 @@ def process_theoretical_data():
     for directory in [output_dir, data_dir, figures_dir]:
         directory.mkdir(parents=True, exist_ok=True)
 
+    # Load experimental data
+    exp_data = AcousticFieldData.from_csv(csv_path)
+
     # Generate theoretical model
-    data = generate_theoretical_model(grid_size=9)
+    data = generate_theoretical_model_from_points(exp_data.x_pos,exp_data.y_pos,f=3000.0)
+
+    # --- Normalize theoretical amplitudes to experimental data ---
+    # Find experimental center (closest point to (0,0))
+    exp_center_idx = np.argmin(exp_data.x_pos**2 + exp_data.y_pos**2)
+    amp_experimental_center = np.sqrt(
+        exp_data.x_comp[exp_center_idx]**2 +
+        exp_data.y_comp[exp_center_idx]**2
+    )
+
+    # Find theoretical center (closest point to experimental center)
+    dist2 = (data.x_pos - exp_data.x_pos[exp_center_idx])**2 + \
+            (data.y_pos - exp_data.y_pos[exp_center_idx])**2
+    theo_center_idx = np.argmin(dist2)
+    amp_theoretical_center = np.sqrt(
+        data.x_comp[theo_center_idx]**2 + data.y_comp[theo_center_idx]**2
+    )
+
+    # Scale theoretical data
+    scale_factor = amp_experimental_center / amp_theoretical_center
+    data.x_comp *= scale_factor
+    data.y_comp *= scale_factor
+    # -------------------------------------------------------------
 
     # Save raw processed data
     data.to_csv(data_dir / 'theoretical_processed.csv')
@@ -208,7 +234,7 @@ def process_real_data(csv_path: str, output_name: str = 'analysis'):
 
     print(f"\n✓ Analysis complete! Results saved to '{output_dir}' directory.")
 
-
+# Only run the code below if this file is being run directly, not imported 
 if __name__ == '__main__':
     # # Example 1: Process synthetic example data
     # print("="*60)
@@ -220,11 +246,10 @@ if __name__ == '__main__':
     print("\n" + "="*60)
     print("EXAMPLE: Processing theoretical model")
     print("="*60)
-    process_theoretical_data()
+    process_theoretical_data(f'{DATA_DIR}/raw/PHY3904_BaEP_3kHz.csv', output_name='3khz')
 
     # Example 3: Process real data
-    for file in DATA_DIR.glob('raw/*.csv'):
-        print("\n" + "="*60)
-        print(f"PROCESSING REAL DATA: {file.name}")
-        print("="*60)
-        process_real_data(file, output_name=file.stem)
+    print("\n" + "="*60)
+    print("PROCESSING REAL DATA")
+    print("="*60)
+    process_real_data(f'{DATA_DIR}/raw/PHY3904_BaEP_3kHz.csv', output_name='3khz')

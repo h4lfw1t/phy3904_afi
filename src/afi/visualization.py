@@ -33,14 +33,15 @@ class AcousticFieldVisualizer:
         """
         self.data = data
 
-    def _prepare_grid(self, resolution: int = 100) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-        """Prepare interpolated grid for visualization."""
+    def _prepare_grid(self, resolution: int = 100):
+        """Prepare interpolated grid for visualization, using complex interpolation for phases."""
+
         # Create regular grid
         xi = np.linspace(self.data.x_pos.min(), self.data.x_pos.max(), resolution)
         yi = np.linspace(self.data.y_pos.min(), self.data.y_pos.max(), resolution)
         xi_grid, yi_grid = np.meshgrid(xi, yi)
 
-        # Interpolate amplitude
+        # Interpolate amplitude (normal)
         amp_grid = griddata(
             (self.data.x_pos, self.data.y_pos),
             self.data.amplitude,
@@ -48,15 +49,17 @@ class AcousticFieldVisualizer:
             method='cubic'
         )
 
-        # Interpolate phase
-        phase_grid = griddata(
+        # Interpolate wrapped phase using complex representation
+        phase_complex = np.exp(1j * self.data.phase) #euler's formula (1j is imaginary unit in Python)
+        phase_complex_grid = griddata(
             (self.data.x_pos, self.data.y_pos),
-            self.data.phase,
+            phase_complex,
             (xi_grid, yi_grid),
-            method='cubic'
+            method='linear'  # linear avoids cubic artifacts
         )
+        phase_grid = np.angle(phase_complex_grid) #reutnrs phase of complex number
 
-        # Interpolate unwrapped phase
+        # Interpolate unwrapped phase as a normal scalar field
         unwrapped_phase_grid = griddata(
             (self.data.x_pos, self.data.y_pos),
             self.data.unwrapped_phase,
@@ -64,7 +67,7 @@ class AcousticFieldVisualizer:
             method='cubic'
         )
 
-        # Interpolate theoretical phase
+        # Interpolate theoretical phase as a normal scalar field
         theoretical_phase_grid = griddata(
             (self.data.x_pos, self.data.y_pos),
             self.data.theoretical_phase,
@@ -72,7 +75,7 @@ class AcousticFieldVisualizer:
             method='cubic'
         )
 
-        # Interpolate relative phase
+        # Interpolate relative phase normally
         relative_phase_grid = griddata(
             (self.data.x_pos, self.data.y_pos),
             self.data.relative_phase,
@@ -226,10 +229,10 @@ class AcousticFieldVisualizer:
             DataType.THEORETICAL_PHASE: {
                 'data': None,
                 'default_cmap': 'plasma',
-                'title': 'Theoretical Acoustic Field Phase Map',
+                'title': 'Theoretical Acoustic Field Relative Phase Map',
                 'cbar_label': 'Theoretical Phase (radians)',
                 'point_color': 'black',
-                'vmin': None,
+                'vmin': 0,
                 'vmax': None,
             },
             DataType.RELATIVE_PHASE: {
