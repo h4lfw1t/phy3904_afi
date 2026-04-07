@@ -16,7 +16,6 @@ class DataType(Enum):
     AMPLITUDE = 'amplitude'
     PHASE = 'phase'
     UNWRAPPED_PHASE = 'unwrapped_phase'
-    THEORETICAL_PHASE = 'theoretical_phase'
     RELATIVE_PHASE = 'relative_phase'
 
 class AcousticFieldVisualizer:
@@ -50,27 +49,19 @@ class AcousticFieldVisualizer:
         )
 
         # Interpolate wrapped phase using complex representation
-        phase_complex = np.exp(1j * self.data.phase) #euler's formula (1j is imaginary unit in Python)
+        phase_complex = np.exp(1j * self.data.phase)
         phase_complex_grid = griddata(
             (self.data.x_pos, self.data.y_pos),
             phase_complex,
             (xi_grid, yi_grid),
             method='linear'  # linear avoids cubic artifacts
         )
-        phase_grid = np.angle(phase_complex_grid) #reutnrs phase of complex number
+        phase_grid = np.mod(np.angle(phase_complex_grid), 2 * np.pi)
 
         # Interpolate unwrapped phase as a normal scalar field
         unwrapped_phase_grid = griddata(
             (self.data.x_pos, self.data.y_pos),
             self.data.unwrapped_phase,
-            (xi_grid, yi_grid),
-            method='cubic'
-        )
-
-        # Interpolate theoretical phase as a normal scalar field
-        theoretical_phase_grid = griddata(
-            (self.data.x_pos, self.data.y_pos),
-            self.data.theoretical_phase,
             (xi_grid, yi_grid),
             method='cubic'
         )
@@ -83,7 +74,7 @@ class AcousticFieldVisualizer:
             method='cubic'
         )
 
-        return xi_grid, yi_grid, amp_grid, phase_grid, unwrapped_phase_grid, theoretical_phase_grid, relative_phase_grid
+        return xi_grid, yi_grid, amp_grid, phase_grid, unwrapped_phase_grid, relative_phase_grid
 
     def plot_amplitude_heatmap(self, figsize: Tuple[int, int] = (10, 8),
                                cmap: str = 'viridis', show_points: bool = True,
@@ -142,25 +133,6 @@ class AcousticFieldVisualizer:
         """
         return self._plot_heatmap(DataType.UNWRAPPED_PHASE, figsize, cmap, show_points, save_path)
 
-    def plot_theoretical_phase_heatmap(self, figsize: Tuple[int, int] = (10, 8),
-                                       cmap: str = 'plasma', show_points: bool = True,
-                                       save_path: Optional[str] = None) -> None:
-        """
-        Create a heatmap of the theoretical phase field.
-
-        Parameters:
-        -----------
-        figsize : tuple
-            Figure size (width, height)
-        cmap : str
-            Colormap name
-        show_points : bool
-            Whether to show measurement points
-        save_path : str, optional
-            Path to save the figure
-        """
-        return self._plot_heatmap(DataType.THEORETICAL_PHASE, figsize, cmap, show_points, save_path)
-
     def plot_relative_phase_heatmap(self, figsize: Tuple[int, int] = (10, 8),
                                     cmap: str = 'inferno', show_points: bool = True,
                                     save_path: Optional[str] = None) -> None:
@@ -214,8 +186,8 @@ class AcousticFieldVisualizer:
                 'title': 'Acoustic Field Phase Map',
                 'cbar_label': 'Phase (radians)',
                 'point_color': 'black',
-                'vmin': -np.pi,
-                'vmax': np.pi,
+                'vmin': 0,
+                'vmax': 2 * np.pi,
             },
             DataType.UNWRAPPED_PHASE: {
                 'data': None,
@@ -224,15 +196,6 @@ class AcousticFieldVisualizer:
                 'cbar_label': 'Unwrapped Phase (radians)',
                 'point_color': 'black',
                 'vmin': None,
-                'vmax': None,
-            },
-            DataType.THEORETICAL_PHASE: {
-                'data': None,
-                'default_cmap': 'plasma',
-                'title': 'Theoretical Acoustic Field Relative Phase Map',
-                'cbar_label': 'Theoretical Phase (radians)',
-                'point_color': 'black',
-                'vmin': 0,
                 'vmax': None,
             },
             DataType.RELATIVE_PHASE: {
@@ -247,11 +210,10 @@ class AcousticFieldVisualizer:
         }
 
         # Get grids
-        xi_grid, yi_grid, amp_grid, phase_grid, unwrapped_phase_grid, theoretical_phase_grid, relative_phase_grid = self._prepare_grid()
+        xi_grid, yi_grid, amp_grid, phase_grid, unwrapped_phase_grid, relative_phase_grid = self._prepare_grid()
         config[DataType.AMPLITUDE]['data'] = amp_grid
         config[DataType.PHASE]['data'] = phase_grid
         config[DataType.UNWRAPPED_PHASE]['data'] = unwrapped_phase_grid
-        config[DataType.THEORETICAL_PHASE]['data'] = theoretical_phase_grid
         config[DataType.RELATIVE_PHASE]['data'] = relative_phase_grid
 
         # Get data type settings
@@ -361,13 +323,13 @@ class AcousticFieldVisualizer:
                 'title': 'Acoustic Field Phase Contours',
                 'cbar_label': 'Phase (radians)',
                 'point_color': 'red',
-                'vmin': -np.pi,
-                'vmax': np.pi,
+                'vmin': 0,
+                'vmax': 2 * np.pi,
             }
         }
 
         # Get grids
-        xi_grid, yi_grid, amp_grid, phase_grid, _, _, _ = self._prepare_grid()
+        xi_grid, yi_grid, amp_grid, phase_grid, _, _ = self._prepare_grid()
         config[DataType.AMPLITUDE]['data'] = amp_grid
         config[DataType.PHASE]['data'] = phase_grid
 
@@ -442,6 +404,40 @@ class AcousticFieldVisualizer:
         """
         return self._plot_3d_surface(DataType.PHASE, figsize, cmap, save_path)
 
+    def plot_unwrapped_phase_3d_surface(self, figsize: Tuple[int, int] = (12, 9),
+                                  cmap: str = 'magma',
+                                  save_path: Optional[str] = None) -> None:
+        """
+        Create 3D surface plot of the unwrapped phase field.
+
+        Parameters:
+        -----------
+        figsize : tuple
+            Figure size
+        cmap : str
+            Colormap name
+        save_path : str, optional
+            Path to save the figure
+        """
+        return self._plot_3d_surface(DataType.UNWRAPPED_PHASE, figsize, cmap, save_path)
+
+    def plot_relative_phase_3d_surface(self, figsize: Tuple[int, int] = (12, 9),
+                                  cmap: str = 'inferno',
+                                  save_path: Optional[str] = None) -> None:
+        """
+        Create 3D surface plot of the relative phase field.
+
+        Parameters:
+        -----------
+        figsize : tuple
+            Figure size
+        cmap : str
+            Colormap name
+        save_path : str, optional
+            Path to save the figure
+        """
+        return self._plot_3d_surface(DataType.RELATIVE_PHASE, figsize, cmap, save_path)
+
     def _plot_3d_surface(self, data_type: DataType = DataType.AMPLITUDE,
                          figsize: Tuple[int, int] = (12, 9),
                          cmap: str = 'viridis',
@@ -470,13 +466,27 @@ class AcousticFieldVisualizer:
                 'default_cmap': 'cividis',
                 'title': 'Acoustic Field Phase Surface',
                 'cbar_label': 'Phase (radians)',
+            },
+            DataType.UNWRAPPED_PHASE: {
+                'data': None,
+                'default_cmap': 'magma',
+                'title': 'Unwrapped Acoustic Field Phase Surface',
+                'cbar_label': 'Unwrapped Phase (radians)',
+            },
+            DataType.RELATIVE_PHASE: {
+                'data': None,
+                'default_cmap': 'inferno',
+                'title': 'Relative Acoustic Field Phase Surface',
+                'cbar_label': 'Relative Phase (radians)',
             }
         }
 
         # Get grids
-        xi_grid, yi_grid, amp_grid, phase_grid, _, _, _ = self._prepare_grid()
+        xi_grid, yi_grid, amp_grid, phase_grid, unwrapped_phase_grid, relative_phase_grid = self._prepare_grid()
         config[DataType.AMPLITUDE]['data'] = amp_grid
         config[DataType.PHASE]['data'] = phase_grid
+        config[DataType.UNWRAPPED_PHASE]['data'] = unwrapped_phase_grid
+        config[DataType.RELATIVE_PHASE]['data'] = relative_phase_grid
 
         # Get data type settings
         settings = config[data_type]
@@ -517,7 +527,7 @@ class AcousticFieldVisualizer:
         save_path : str, optional
             Path to save the figure
         """
-        xi_grid, yi_grid, amp_grid, phase_grid, _, _, _ = self._prepare_grid()
+        xi_grid, yi_grid, amp_grid, phase_grid, _, _ = self._prepare_grid()
 
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize)
 
@@ -534,7 +544,7 @@ class AcousticFieldVisualizer:
 
         # Phase plot
         im2 = ax2.pcolormesh(xi_grid, yi_grid, phase_grid, cmap='cividis',
-                             shading='auto', vmin=-np.pi, vmax=np.pi)
+                             shading='auto', vmin=0, vmax=2*np.pi)
         ax2.scatter(self.data.x_pos, self.data.y_pos, c='black',
                     s=15, marker='x', alpha=0.5)
         ax2.set_xlabel('X Position')
