@@ -14,7 +14,6 @@ dependencies = [
     "scipy (>=1.17.1,<2.0.0)",
     "pandas-stubs (>=3.0.0.260204,<4.0.0.0)",
     "scipy-stubs (>=1.17.1.2,<2.0.0.0)",
-    "pyserial (>=3.5,<4.0)",
     "scikit-image (>=0.26.0,<0.27.0)"
 ]
 
