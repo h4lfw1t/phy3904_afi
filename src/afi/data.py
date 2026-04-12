@@ -194,6 +194,10 @@ class AcousticFieldData:
             cx_m = center_x
             cy_m = center_y
 
+        #Find amplitude A0 at experimental center 
+        A0 = np.sqrt(
+            self.x_comp[center_idx]**2 + self.y_comp[center_idx]**2)
+
         # Convert positions to meters, relative to acoustic center
         dx_m = (x_pos * 0.01) - cx_m
         dy_m = (y_pos * 0.01) - cy_m
@@ -202,8 +206,8 @@ class AcousticFieldData:
         r_3d = np.sqrt(dx_m**2 + dy_m**2 + z0**2)
 
         # Calculate amplitude and phase
-        amp = 1 / r_3d
-        phase = k * r_3d
+        amp = A0 * (z0 / r_3d)
+        phase = k * (r_3d - z0)
 
         x_comp = amp * np.cos(phase)
         y_comp = amp * np.sin(phase)
