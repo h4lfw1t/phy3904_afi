@@ -75,13 +75,11 @@ class AcousticFieldData:
         )
 
         # Calculate derived quantities
-        self.amplitude = np.sqrt(self.x_comp**2 + self.y_comp**2)
-        self.phase = np.mod(np.arctan2(self.y_comp, self.x_comp), 2 * np.pi)  # Phase in radians [0, 2pi)
+        A0 = np.sqrt(self.x_comp[center_idx]**2 + self.y_comp[center_idx]**2)
 
-        if normalize_to_center:
-            norm_factor = self.amplitude[self.center_idx]
-            if norm_factor > 0:
-                self.amplitude /= norm_factor
+        # Normalized amplitude for real data processing 
+        self.amplitude = np.sqrt(self.x_comp**2 + self.y_comp**2)/A0
+        self.phase = np.mod(np.arctan2(self.y_comp, self.x_comp), 2 * np.pi)  # Phase in radians [0, 2pi)
 
         # Calculate unwrapped phase
         self.unwrapped_phase = self._unwrap_phase_2d(self.phase)
@@ -195,8 +193,7 @@ class AcousticFieldData:
             cy_m = center_y
 
         #Find amplitude A0 at experimental center 
-        A0 = np.sqrt(
-            self.x_comp[center_idx]**2 + self.y_comp[center_idx]**2)
+        A0 = np.sqrt(self.x_comp[center_idx]**2 + self.y_comp[center_idx]**2)
 
         # Convert positions to meters, relative to acoustic center
         dx_m = (x_pos * 0.01) - cx_m
