@@ -425,3 +425,14 @@ $RECYCLE.BIN/
 .idea/phy3904_afi.iml
 src/output/**
 src/output/
+*.Zone.Identifier
+
+# LaTeX intermediate files
+.aux
+.bbl
+.blg
+.fls
+.log
+.out
+.fdb_latexmk
+.synctex.gz

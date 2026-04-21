@@ -4,7 +4,8 @@ Demonstrates usage with example data and provides templates for real data proces
 """
 
 import numpy as np
-from pathlib import Path
+import re
+from pathlib import Path 
 
 from afi import AcousticFieldData, AcousticFieldVisualizer
 
@@ -15,10 +16,8 @@ def generate_example_data(grid_size: int = 9) -> AcousticFieldData:
     """
     Generate synthetic acoustic field data for testing.
 
-    :param grid_size Size of the grid (grid_size x grid_size points)
-    :type grid_size: int
+    :param grid_size: Size of the grid (grid_size x grid_size points)
     :return: AcousticFieldData object with synthetic data
-    :rtype: AcousticFieldData
     """
     print(f"Generating example data for a {grid_size}x{grid_size} grid...")
 
@@ -39,60 +38,12 @@ def generate_example_data(grid_size: int = 9) -> AcousticFieldData:
 
     return AcousticFieldData(x_pos, y_pos, x_comp, y_comp)
 
-def generate_theoretical_model(grid_size: int = 9,
-                               f: float = 2000.0) -> AcousticFieldData:
-    """
-    Generate first-order theoretical model of the acoustic field.
-
-    :param grid_size: Size of the grid (grid_size x grid_size points)
-    :type grid_size: int
-    :param f: Frequency of the wave (Hz)
-    :type f: float, optional
-    :return: AcousticFieldData object with theoretical data
-    :rtype: AcousticFieldData
-    """
-    print(f"Generating theoretical model for a {grid_size}x{grid_size} grid...")
-
-    # Acoustic Constants
-    v = 343.0                   # Speed of sound in m/s
-    k = 2 * np.pi * f / v       # Wave number in rad/m
-
-    # Emitter position parameters
-    z0 = 0.40       # cm
-    center_x, center_y = 4.5, 4.5
-
-    # Create grid
-    x = np.linspace(0, 9, grid_size)
-    y = np.linspace(0, 9, grid_size)
-    xx, yy = np.meshgrid(x, y)
-    x_pos = xx.flatten()
-    y_pos = yy.flatten()
-
-    # Calculate true 3D distance from emitter to microphone
-    dx_m = (x_pos - center_x) * 0.01  # Convert cm to m
-    dy_m = (y_pos - center_y) * 0.01  # Convert cm to m
-
-    r_3d = np.sqrt(dx_m**2 + dy_m**2 + z0**2)
-
-    # Calculate amplitude (1/r)
-    amp = 1.0 / r_3d
-    normalized_amp = amp / np.max(amp)
-
-    # Calculate phase (k*r)
-    phase = k * r_3d
-
-    # Simulate lock-in amplifier output
-    x_comp = normalized_amp * np.cos(phase)
-    y_comp = normalized_amp * np.sin(phase)
-
-    return AcousticFieldData(x_pos, y_pos, x_comp, y_comp)
-
 def process_example_data():
     """Run complete analysis pipeline on example data."""
     # Create output directories
     output_dir = OUT_DIR / 'example'
     data_dir = DATA_DIR / 'example/processed'
-    figures_dir = output_dir / 'example/figures'
+    figures_dir = output_dir / 'figures'
 
     for directory in [output_dir, data_dir, figures_dir]:
         directory.mkdir(parents=True, exist_ok=True)
@@ -123,18 +74,36 @@ def process_example_data():
     print(f"✓ Processed data saved to '{data_dir}' directory.")
     print(f"✓ Figures saved to '{figures_dir}' directory.")
 
-def process_theoretical_data():
-    """Run complete analysis pipeline on theoretical model."""
+def process_theoretical_data(csv_path: str,
+                             f: float,
+                             output_name: str):
+    """
+    Process theoretical model data based on experimental positions.
+
+    Parameters:
+    -----------
+    csv_path : str
+        Path to CSV file with experimental data
+    output_name : str
+        Base name for output files
+    """
     # Create output directories
     output_dir = OUT_DIR / 'theoretical'
     data_dir = DATA_DIR / 'theoretical/processed'
-    figures_dir = output_dir / 'theoretical/figures'
+    figures_dir = output_dir / 'figures'
 
     for directory in [output_dir, data_dir, figures_dir]:
         directory.mkdir(parents=True, exist_ok=True)
 
+    # Load experimental data
+    exp_data = AcousticFieldData.from_csv(csv_path)
+
     # Generate theoretical model
-    data = generate_theoretical_model(grid_size=9)
+    data = AcousticFieldData.from_theoretical_model(
+        exp_data.x_pos,
+        exp_data.y_pos,
+        frequency=f,
+    )
 
     # Save raw processed data
     data.to_csv(data_dir / 'theoretical_processed.csv')
@@ -150,13 +119,12 @@ def process_theoretical_data():
     viz.plot_combined(save_path=figures_dir / 'combined_view.png')
     viz.plot_amplitude_heatmap(save_path=figures_dir / 'amplitude_heatmap.png')
     viz.plot_phase_heatmap(save_path=figures_dir / 'phase_heatmap.png')
-    viz.plot_unwrapped_phase_heatmap(save_path=figures_dir / 'unwrapped_phase_heatmap.png')
-    viz.plot_theoretical_phase_heatmap(save_path=figures_dir / 'theoretical_phase_heatmap.png')
-    viz.plot_relative_phase_heatmap(save_path=figures_dir / 'relative_phase_heatmap.png')
     viz.plot_amplitude_contours(save_path=figures_dir / 'amplitude_contours.png')
     viz.plot_phase_contours(save_path=figures_dir / 'phase_contours.png')
     viz.plot_amplitude_3d_surface(save_path=figures_dir / 'amplitude_3d_surface.png')
     viz.plot_phase_3d_surface(save_path=figures_dir / 'phase_3d_surface.png')
+    viz.plot_relative_phase_heatmap(save_path=figures_dir / 'relative_phase_heatmap.png')
+    viz.plot_relative_phase_3d_surface(save_path=figures_dir / 'relative_phase_3d_surface.png')
 
     print(f"\n✓ Analysis complete! Results saved to '{output_dir}' directory.")
     print(f"✓ Processed data saved to '{data_dir}' directory.")
@@ -198,32 +166,40 @@ def process_real_data(csv_path: str, output_name: str = 'analysis'):
     viz.plot_combined(save_path=figures_dir / f'{output_name}_combined.png')
     viz.plot_amplitude_heatmap(save_path=figures_dir / f'{output_name}_amplitude.png')
     viz.plot_phase_heatmap(save_path=figures_dir / f'{output_name}_phase.png')
-    viz.plot_unwrapped_phase_heatmap(save_path=figures_dir / f'{output_name}_unwrapped_phase.png')
-    viz.plot_theoretical_phase_heatmap(save_path=figures_dir / f'{output_name}_theoretical_phase.png')
-    viz.plot_relative_phase_heatmap(save_path=figures_dir / f'{output_name}_relative_phase.png')
     viz.plot_amplitude_contours(save_path=figures_dir / f'{output_name}_amplitude_contours.png')
     viz.plot_phase_contours(save_path=figures_dir / f'{output_name}_phase_contours.png')
     viz.plot_amplitude_3d_surface(save_path=figures_dir / f'{output_name}_amplitude_3d.png')
     viz.plot_phase_3d_surface(save_path=figures_dir / f'{output_name}_phase_3d.png')
+    viz.plot_relative_phase_heatmap(save_path=figures_dir / f'{output_name}_relative_phase.png')
+    viz.plot_relative_phase_3d_surface(save_path=figures_dir / f'{output_name}_relative_phase_3d.png')
 
     print(f"\n✓ Analysis complete! Results saved to '{output_dir}' directory.")
 
 
 if __name__ == '__main__':
-    # # Example 1: Process synthetic example data
-    # print("="*60)
-    # print("EXAMPLE: Processing synthetic data")
-    # print("="*60)
-    # process_example_data()
-
-    # Example 2: Process theoretical model
-    print("\n" + "="*60)
-    print("EXAMPLE: Processing theoretical model")
-    print("="*60)
-    process_theoretical_data()
-
-    # Example 3: Process real data
-    print("\n" + "="*60)
-    print("PROCESSING REAL DATA")
-    print("="*60)
-    process_real_data(f'{DATA_DIR}/raw/PHY3904_BaEP_preliminary_absolute_phase_values.csv', output_name='PHY3904_BaEP_preliminary_absolute_phase_values')
+    raw_files = list(DATA_DIR.glob('raw/*.csv'))
+    
+    if not raw_files:
+        print(f"No CSV files found in {DATA_DIR / 'raw'}")
+    
+    for filepath in raw_files:
+        filename = filepath.name
+        
+        # Extract frequency from filename (e.g., '3kHz' -> 3000.0)
+        freq_match = re.search(r'(\d+)kHz', filename)
+        if not freq_match:
+            print(f"Skipping {filename}: Could not extract frequency from name.")
+            continue
+            
+        freq = float(freq_match.group(1)) * 1000.0
+        output_name = filename.replace('.csv', '')
+        
+        print("\n" + "="*60)
+        print(f"PROCESSING REAL DATA: {filename}")
+        print("="*60)
+        process_real_data(str(filepath), output_name=output_name)
+        
+        print("\n" + "="*60)
+        print(f"PROCESSING THEORETICAL MODEL: {filename}")
+        print("="*60)
+        process_theoretical_data(str(filepath), f=freq, output_name=output_name)
