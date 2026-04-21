@@ -426,3 +426,13 @@ $RECYCLE.BIN/
 src/output/**
 src/output/
 *.Zone.Identifier
+
+# LaTeX intermediate files
+.aux
+.bbl
+.blg
+.fls
+.log
+.out
+.fdb_latexmk
+.synctex.gz
